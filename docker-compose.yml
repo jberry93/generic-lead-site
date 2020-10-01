@@ -1,0 +1,54 @@
+# Cite: https://blog.logrocket.com/containerized-development-nestjs-docker/
+version: '3.8'
+
+services:
+    leadgenapp:
+        container_name: leadgenapp
+        build:
+            context: .
+            target: development
+        volumes:
+            - .:/usr/src/app
+            - /usr/src/app/node_modules
+        ports:
+            - ${SERVER_PORT}:${SERVER_PORT}
+            - "9229:9229"
+        command: npm run start:dev
+        env_file:
+            - .env
+        networks:
+            - leadgennet
+        depends_on:
+            - leadgenredis
+            - leadgendb
+    leadgenredis:
+        container_name: leadgenredis
+        image: redis:6
+        networks:
+            - leadgennet
+    leadgendb:
+        container_name: leadgendb
+        image: postgres:12
+        networks:
+            - leadgennet
+        environment:
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_DB: ${DB_DATABASE_NAME}
+            PG_DATA: /var/lib/postgresql/data
+        ports:
+            - "5432:5432"
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+    leadgenadminer:
+        container_name: leadgenadminer
+        image: adminer
+        restart: always
+        ports:
+            - "8080:8080"
+        networks:
+            - leadgennet
+networks:
+    leadgennet:
+volumes:
+    pgdata:
